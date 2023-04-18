@@ -14,6 +14,7 @@ What you get:
 - Optionally, dplyr verbs or style where it makes sense:
     - `agg`, really? `with_columns` is almost as bad.
     - `rename({"from": "to"})` has way too many brackets and quotes
+    - `.with_row_count()` starts from zero? Please, we are doing statistics here
 - Convenience functions like `separate` and `reorder`
 - Full power of `polars` functions, this is a very this wrapper not a re-implementation. 
 
@@ -25,7 +26,12 @@ functions yourself (see Extension) when you find pain points in polars, or you
 have a common operation you want to reuse. 
 
 A note:
-I certainly *don't* think that polars should have been done like this,
+I certainly *don't* think that polars should have been made like this, `dplyrs` is very
+much a 'porcelain' library and I don't see any good reason to use it in non-interactive
+code (ie production or scripts). I personally spend a lot of time starting at analysis
+code so maybe looks mean more to me than most. The same goes for including lots of small
+convenience functions: it's a mistake in a serious library, but it can drastically
+improve the user experince.
 
 
 ## syntax
