@@ -1,39 +1,40 @@
 from polars.datatypes import dtype_to_py_type as to_py
+from functools import wraps
 
-def check_df_schema(dtypes, schema, strict=False):
+def with_arguments(decorator):
+    
+    @wraps(decorator)
+    def func(*args, **kwargs):
+        return lambda f: decorator(f, *args, **kwargs)
+
+    return func
+
+
+def check(schema, dtypes, strict=False):
+    print("inside check")
     errors = []
 
     for col, T in schema.items():
-        dtype = to_py(dtypes["col"]) if col in dtypes else None
+        dtype = to_py(dtypes[col]) if col in dtypes else None
         if dtype != T:
             errors.append(col)
 
-    if errors:
-        raise TypeError(
-            f"Columns {errors} are missing for contain incorrect types."
-        )
+    if errors: raise TypeError(f"df has incorrect or missing cols: {errors}")
     
-    extra_cols = [col for col in dtypes if not col in schema]
+    if strict and len(dtypes) > len(schema):
+        raise TypeError("Extra columns present.")
+        
 
-    if strict and extra_cols:
-        raise TypeError(
-            f"Strict mode enabled, dataframe contains extra columns {extra_cols}"
-        )
+@with_arguments
+def schema(f, _check=True, _strict=False, **spec):
 
+    @wraps(f)
+    def new_func(df, *args, **kwargs):
+        if _check:
+            check(spec, df.schema, _strict)
 
-def schema(_check=True, _strict=False, **spec):
+        return f(df, *args, **kwargs)
 
-    def decorator(f):
-        if not _check: return f
+    new_func._schema = spec
 
-        def new_func(df, *args, **kwargs):
-            if _check:
-                check_df_schema(df.schema, spec, _strict)
-
-            return f(df, *args, **kwargs)
-
-        return new_func
-    
-    return decorator
-
-
+    return new_func
