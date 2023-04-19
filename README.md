@@ -36,7 +36,7 @@ functions yourself (see How it Works) when you find pain points in polars, or yo
 have a common operation you want to reuse. 
 
 A note:
-I certainly *don't* think that polars should have been made like this, `dplyrs` is very
+I certainly *don't* think that polars should have been made like this, `plyrs` is very
 much a 'porcelain' library and I don't see any good reason to use it in non-interactive
 code (ie production or longer scripts). I personally spend a lot of time starting at analysis
 code so maybe looks mean more to me than most. The same goes for including lots of small
@@ -204,7 +204,7 @@ power of polars, rather than trying to second guess what you need and forcing yo
 to lobby the package writer if you want anything else.
 
 However, aside from enabling the `query()` syntax and the functions defined in the package,
-the `dplyrs` machinery makes it easy to define your own functions and use them in the same
+the `plyrs` machinery makes it easy to define your own functions and use them in the same
 way as any other polars method: just add the
 `@wrap_polars` decorator, and `@collector` if needed (as the first decorator) to a function
 taking a dataframe as the first argument.
@@ -230,7 +230,7 @@ query(
 )
 ```
 
-NB This can be done with `.pipe`, sure, see first paragraph. `dplyrs` doesn't use `.pipe`
+NB This can be done with `.pipe`, sure, see first paragraph. `plyrs` doesn't use `.pipe`
 internally because it's not available everywhere, namely after `.groupby` calls.
 
 There is a another trick in the decorator: if the first argument to a function is a
@@ -244,18 +244,17 @@ reorder(df, ["id", "species"])
 # Usage
 
 `plyrs` is designed with multiple namespaces, depending if you want just the improved
-syntax (`core` namespace) or the dplyr verb bindings (`dplyr` namespace), and whether
-you're using a namespace or `import *`.
-Of course, the latter isn't recommended for anything other than interactive use, and
-`plyrs` takes the additional step of renaming `filter` to `where` (and `sort` in the core
-namespace) in both namespaces to
+syntax (`plyrs.core` namespace) or the dplyr verb bindings (`plyrs` namespace), and
+whether you're using a namespace or `import *`. Of course, the latter isn't recommended
+for anything other than interactive use, and `plyrs` takes the additional step of
+renaming `filter` to `where` (and `sort` in the core namespace) in both namespaces to
 avoid accidental collisions (you can of course alias `filter=where` if you know what
 you're doing). There may also be contexts you might want to use the less common `ply`
 instead of `query`, or even `pipe` if that takes your fancy.
 
 # Laziness
 
-In general, the aim of `dplyrs` is to get maximum laziness without any input from the user:
+In general, the aim of `plyrs` is to get maximum laziness without any input from the user:
 - `query()` works with lazy dataframes where possible.
     - `df.lazy()` is called before any function is run
     - `plyrs` functions always return lazy output from lazy input
@@ -264,7 +263,7 @@ In general, the aim of `dplyrs` is to get maximum laziness without any input fro
 - `query()` collects the final result by default
     - this aligns with the goal of interactive use
     - use `collect=False` to prevent this.
-- functions which require collection (currently just `pivot` in `dplyrs`) are wrapped in `@collector`
+- functions which require collection (currently just `pivot` in `plyrs`) are wrapped in `@collector`
     - this calls `collect()` when needed, as the name suggests
     - `lazy()` is called on the output if the input was also lazy
         - this ensures interactive use outside `query` will generally show output
@@ -276,7 +275,7 @@ In general, the aim of `dplyrs` is to get maximum laziness without any input fro
 Similarly ergonomic plotnine bindings:
 
 ```py
-from dplyrs import plot, geom
+from plyrs import plot, geom
 
 plot(
     iris,
