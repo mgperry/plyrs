@@ -13,19 +13,15 @@ What you get:
     - inputs and outputs are plain `polars` objects
     - mix in regular `polars` code without any problems.
     - easily roll your own, bypass `.pipe`
-- Some minor affordances around lazy/eager DataFrames, with interactive use in mind
-    - `query()` uses lazy dataframes where possibly, without you noticing.
+- affordances for lazy/eager DataFrames, with interactive use in mind (see Laziness below)
+    - `dlpyrs` uses lazy dataframes wherever possible, without you noticing.
     - `@collector` decorator for functions which require eager evaluation.
-- Optionally, dplyr verbs or style where it makes sense:
+- Optionally, dplyr verbs or style:
     - `agg`, really? `with_columns` is almost as bad.
-    - `rename({"from": "to"})` has way too many brackets and quotes
-    - `.with_row_count()` starts from zero? Please, we are doing statistics here
-    - `plyrs` keeps `melt` and `pivot` even though this mixes various generations of
-      tidyverse evolution, because they're the most obvious names. Also, the`polars` 
-      pivot syntax is definitely an improvement.
-    - `if_else` wrapping `pl.when().then().otherwise()`
+    - `rename({"from": "to"})` has too many brackets and quotes
+    - `.with_row_count()` starts from zero? Please, we are doing statistics
 - Convenience functions like `separate` and `reorder`
-- Full power of `polars` functions, this is a very this wrapper not a re-implementation. 
+- Full power of `polars` functions, this is a very thin wrapper not a re-implementation. 
 - PLANNED: Wrap dataframe functions in types and create DSLs (like GRanges)
 
 What you don't get:
@@ -42,7 +38,6 @@ code (ie production or longer scripts). I personally spend a lot of time startin
 code so maybe looks mean more to me than most. The same goes for including lots of small
 convenience functions: it's a mistake in a serious library, but it can drastically
 improve the interactive experience.
-
 
 ## syntax
 
@@ -230,8 +225,9 @@ query(
 )
 ```
 
-NB This can be done with `.pipe`, sure, see first paragraph. `plyrs` doesn't use `.pipe`
-internally because it's not available everywhere, namely after `.groupby` calls.
+NB This can be done with `.pipe`, sure, I refer you to the first paragraph. `plyrs`
+doesn't use `.pipe` internally because it's not available everywhere, namely after
+`.groupby` calls.
 
 There is a another trick in the decorator: if the first argument to a function is a
 dataframe, then it just calls the function directly. This means that everything can
@@ -241,16 +237,40 @@ be used outside of the `query` context:
 reorder(df, ["id", "species"])
 ```
 
-# Usage
+# Namespaces
 
-`plyrs` is designed with multiple namespaces, depending if you want just the improved
-syntax (`plyrs.core` namespace) or the dplyr verb bindings (`plyrs` namespace), and
-whether you're using a namespace or `import *`. Of course, the latter isn't recommended
-for anything other than interactive use, and `plyrs` takes the additional step of
-renaming `filter` to `where` (and `sort` in the core namespace) in both namespaces to
-avoid accidental collisions (you can of course alias `filter=where` if you know what
-you're doing). There may also be contexts you might want to use the less common `ply`
-instead of `query`, or even `pipe` if that takes your fancy.
+`plyrs` is designed with multiple namespaces, and with some support for (gasp!)
+`import *` usage.
+
+The full namespace `import plyrs` gets you:
+- core machinery `[query, wrap_polars, ...]`
+- all the polars wrapper functions, aliased to `dplyr` verbs (see below).
+- extra functions, including some copied from `dplyr`
+
+Alternatively, `import plyrs.core as ply` gets you:
+- core machinery
+- polars wrapper functions (non-aliased)
+
+Both namespaces contain `where` as an alias to `filter`, which is omitted on `import *`
+because it conflits with the builtin.
+
+List of changes (possibly complete):
+- `agg` => `summarise`
+- `with_columns` => `mutate`
+- `grouby` => `group_by`, I realise this is petty
+- `get_column` => `pull`
+- `rename` takes kwargs, not a dict, still easily programmable with `**dict`
+    - NB this is also true in the `core` namespace
+- `plyrs` keeps `melt` and `pivot` even though this mixes various generations of
+    tidyverse evolution, because they're the most obvious names.
+- the renaming is implemented through a dict (`_verbs`) in package init.
+
+some extras:
+- `reorder` to change column order
+- `separate` to splite delited columns
+- `index` wraps `with_row_count`, starts from 1, defaults to "id" and can add a prefix
+- `if_else` wrapping `pl.when().then().otherwise()`
+- add your own!
 
 # Laziness
 
@@ -275,7 +295,12 @@ In general, the aim of `plyrs` is to get maximum laziness without any input from
 Similarly ergonomic plotnine bindings:
 
 ```py
+from plyrs.plot import plot, geom, ggplot, theme, labels
+
 base_plot = plot(
+    ggplot(df, x="sepal_length", y="sepal_width", colour="species"),
+    geom.point()
+)
 
 formatting = [theme.tufte(), labels.ggtitle("i <3 hadley")]
 
