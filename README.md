@@ -21,7 +21,8 @@ What you get:
     - `rename({"from": "to"})` has too many brackets and quotes
     - `.with_row_count()` starts from zero? Please, we are doing statistics
 - Convenience functions like `separate` and `reorder`
-- Full power of `polars` functions, this is a very thin wrapper not a re-implementation. 
+- Full power of `polars` functions, this is a very thin wrapper not a re-implementation.
+- `col` helper wrapping `pl.col` to reference columns without quotes
 - PLANNED: Wrap dataframe functions in types and create DSLs (like GRanges)
 
 What you don't get:
@@ -84,28 +85,29 @@ Polars is not shorter, but it does solve some of these issues:
 )
 ```
 
-BEHOLD! The dots are gone.
+BEHOLD! The dots are gone, along with the brackets and most of the quotes:
 
 ```py
 query(
     flights_pl,
-    filter(
-        pl.col("year") == 2013,
-        pl.col("month") == 1
+    where(
+        col.year == 2013,
+        col.month == 1
     ),
-    drop_nulls("arr_delay"),
-    join(airlines_pl, on = "carrier", how = "left"),
+    drop_nulls(col.arr_delay),
+    join(airlines_pl, on = col.carrier, how = "left"),
     mutate(arr_delay = if_else(
-        pl.col("arr_delay") > 0,
-        pl.col("arr_delay"),
+        col.arr_delay > 0,
+        col.arr_delay,
         0
-    ))
-    group_by(airline=pl.col("name")),
+    )),
+    rename(name="airline"),
+    group_by(col.airline),
     summarise(
-        flights = pl.count("airline"),
-        mean_delay = pl.mean("arr_delay")
+        flights = col.airline.count(),
+        mean_delay = col.arr_delay.mean()
     ),
-    arrange("mean_delay", reverse = True)
+    arrange(col.mean_delay, descending = True)
 )
 ```
 
@@ -291,27 +293,17 @@ In general, the aim of `plyrs` is to get maximum laziness without any input from
 
 # Dark Magic
 
-I don't personally condone this level of witchcraft, but `dplyrs` also contains
-a class whose instances allow you to access columns (like `pl.col`) as object
+`dplyrs` also contains
+a class (`ColAlias`) which allows you to access columns (like `pl.col`) as object
 attributes, by overriding `__getattr__`.
 
 This idea comes from [sibua](https://github.com/machow/siuba), so credit goes
 to the author 'machow' if he came up with it.
 
-You have to instantiate an object to do this, and additionally the class isn't
-`__all__`.
-
-This is deliberate because:
-a. it means you have to deliberately do this, and
-b. everyone will have a different symbol they want to use (personally I don't like "_", but each to their own)
-
 You use it like this:
 
 ```py
-from plyrs import *
-from plyrs import ColAlias as make_alias
-
-col = make_alias()
+from plyrs import col, select, mutate, query, group_by, summarise
 
 select(iris, col.species, col.sepal_length, col.sepal_width)
 
@@ -320,7 +312,8 @@ mutate(binomial="Iris " + col.species)
 
 `.all` and `.exclude` are aliased. If you don't want this, pass `redirect=False`
 to the constructor. Calling a ColAlias instance directly will pass any arguments
-to `pl.col`; this can also be used to access a column called "all" ie `col("all")`.
+to `pl.col`; this can also be used to access a column called "all" ie `col("all")`,
+and is also useful if you need to reference a column using a variable.
 
 ```py
 query(
