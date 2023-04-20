@@ -3,23 +3,25 @@ from .decorators import (
     collector,
 )
 
-from .extra import(
-    if_else,
-    index,
-    reorder,
-)
-
 from .utils import _mask
 from .schema import schema
-
 
 from .col_alias import ColAlias
 col = ColAlias()
 
-
 from . import core
 
-# dplyr translations
+from .extra import *
+from .extra import _extra
+
+_all = [
+    "wrap_polars",
+    "collector",
+    "schema",
+    "col",
+]
+
+
 _verbs = {
     "groupby":      "group_by",
     "with_columns": "mutate",
@@ -29,26 +31,16 @@ _verbs = {
 }
 
 
-_core = core._core
-
-for f in _core:
+for f in core._core:
     name = _verbs.get(f, f)
     globals()[name] = getattr(core, f)
 
     if name in _mask:
-        globals()[_mask[name]] = getattr(core, f)
+        alias = _mask[name]
+        globals()[alias] = getattr(core, f)
+        _all.append(alias)
+    else:
+        _all.append(name)
 
 
-_all = [
-    "wrap_polars",
-    "collector",
-    "schema",
-    "if_else",
-    "reorder",
-    "index",
-    "col",
-]
-
-_rename = {**_verbs, **_mask}
-
-__all__ = [_rename.get(f, f) for f in _all + _core]
+__all__ = _all + _extra + _extra
