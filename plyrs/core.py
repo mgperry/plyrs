@@ -1,5 +1,6 @@
 import polars as pl
 from functools import reduce
+from typing import Sequence
 
 from .decorators import wrap_polars, collector
 from .utils import safe_collect, df_arg, _mask, as_col
@@ -56,6 +57,16 @@ def drop_nulls(df, *args):
 
     Takes multiple args as either strings or columns.
     """
+
+    if args and isinstance(args[0], Sequence):
+        if len(args) == 1:
+            args = list(args[0])
+        else:
+            raise ValueError("When passing a a list to drop_nulls no other args are allowed")
+
+    # if all strings passed then call optimised code
+    if all(isinstance(arg, str) for arg in args):
+        return df.drop_nulls(args)
 
     exprs = [as_col(c).is_not_null() for c in args]
 
