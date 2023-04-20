@@ -239,7 +239,7 @@ be used outside of the `query` context:
 reorder(df, ["id", "species"])
 ```
 
-# Namespaces
+## Namespaces
 
 `plyrs` is designed with multiple namespaces, and with some support for (gasp!)
 `import *` usage.
@@ -277,7 +277,7 @@ some extras:
 - `if_else` wrapping `pl.when().then().otherwise()`
 - add your own!
 
-# Laziness
+## Laziness
 
 In general, the aim of `plyrs` is to get maximum laziness without any input from the user:
 - `query()` works with lazy dataframes where possible.
@@ -295,7 +295,7 @@ In general, the aim of `plyrs` is to get maximum laziness without any input from
 - `join` is a special case, which will coerce the `right` dataframe to the same style as `left`.
     - inside `query()` this will usually be lazy.
 
-# Dark Magic
+## Dark Magic
 
 `dplyrs` also contains
 a class (`ColAlias`) which allows you to access columns (like `pl.col`) as object
@@ -333,7 +333,7 @@ Functions like `pl.mean("sepal_width")` are not aliased, because these are just
 sugar and `col.sepal_width.mean()` is easier to type, and reduces the chance of
 collisions massively (e.g. `sum` is a very common columne name).
 
-# Bonus
+## Bonus
 
 Similarly ergonomic plotnine bindings:
 

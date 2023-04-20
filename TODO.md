@@ -1,0 +1,5 @@
+- proper packaging
+    - deps
+    - version
+- quick tests (e.g. run flights example)
+- documentation???
