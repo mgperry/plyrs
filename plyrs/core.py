@@ -24,13 +24,16 @@ def pivot(df, *args, **kwargs):
 
 
 @wrap_polars
-def rename(df, **kwargs):
+def rename(df, d={}, **kwargs):
     """
     dplyrs wrapper for polars.DataFrame.rename
 
-    Takes named arguments instead of a dict.
+    Takes named arguments as well as a dict.
     """
-    return df.rename(kwargs)
+
+    d.update(kwargs)
+
+    return df.rename(d)
 
 
 @wrap_polars

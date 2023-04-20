@@ -259,8 +259,7 @@ List of changes (possibly complete):
 - `with_columns` => `mutate`
 - `grouby` => `group_by`, I realise this is petty
 - `get_column` => `pull`
-- `rename` takes kwargs, not a dict, still easily programmable with `**dict`
-    - NB this is also true in the `core` namespace
+- `rename` takes kwargs in addition to a single dict, kwargs have precedence.
 - `plyrs` keeps `melt` and `pivot` even though this mixes various generations of
     tidyverse evolution, because they're the most obvious names.
 - the renaming is implemented through a dict (`_verbs`) in package init.
