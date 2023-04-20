@@ -275,15 +275,19 @@ In general, the aim of `plyrs` is to get maximum laziness without any input from
 Similarly ergonomic plotnine bindings:
 
 ```py
-from plyrs import plot, geom
+base_plot = plot(
+
+formatting = [theme.tufte(), labels.ggtitle("i <3 hadley")]
 
 plot(
-    iris,
-    dict(x="sepal_length", y="sepal_width", colour="species"),
-    geom.point()
+    base_plot,
+    *formatting
 )
+
 ```
 
-- `plot` function merges arguments, no more R-style "+"
+- `plot` function combines arguments, no more R-style "+"
 - Coerce polars dataframe and dictionary `aes()` arguments
-- geoms, coords, scales are namespaced with extra typing removed.
+- all functions inside a smaller namespace
+- geoms, coords, scales etc. are namespaced with extra typing removed.
+- easily compose lists of geoms

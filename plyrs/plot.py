@@ -1,35 +1,79 @@
-from plotnine import ggplot, aes
+import plotnine
+from plotnine import aes
+
+import polars as pl
+import pandas as pd
+
 from functools import reduce
 from typing import Union
 from types import SimpleNamespace
 import operator
-import polars as pl
-import pandas as pd
 
-def plot(df: Union[pl.DataFrame, pd.DataFrame, None], mapping: Union[dict, aes, None], *args):
+
+def ggplot(
+        df: Union[pl.DataFrame, pd.DataFrame],
+        mapping: Union[aes, dict] = {},
+        **kwargs
+    ):
     """
-    Wrapper of plotnine.ggplot to avoid "+". If you want to create
-    a ggplot instance without data or mappings, these must be
-    explicitly set to None, eg:
+    Wrapper of the ggplot function in plotnine.
 
-    plot(
-        None,
-        aes(x="width", y="height"),
-        geom_point(data=my_df)
-    )
+    Polars dataframe are auto-converted (inc LazyFrames which
+    are collected).
 
+    Creating a plot without data requires an explicit None
+    argument:
+
+    `ggplot(None, aes("var1", "var2"))`
+
+    mapping (ie aes) is specified as an aes object or dict:
+
+    ```
+    ggplot(df, {"x": "var1", "y": "var2"})
+    ggplot(df, aes("var1", "var2"))
+    ```
+
+    kwargs are added to aes (if present), can be mixed if desired, and
+    kwargs takes precedence:
+
+    ```
+    ggplot(df, x="var1", y="var2")
+
+    default_aes = {"x": "ignored", "y": "var2"}
+    ggplplot(df, default_aes, x="var1", colour="var3")
+    ```
+
+    If needed, 'environment' argument is pop'd from kwargs. This is not
+    a valid aesthetic mapping collisions should not be an issue.
     """
+
     if isinstance(df, pl.DataFrame):
         df = df.to_pandas()
+    elif isinstance(df, pl.LazyFrame):
+        df = df.collect().to_pandas()
     elif not isinstance(df, (pd.DataFrame, type(None))):
-        raise ValueError("First argument 'df' must be dataframe or explicit None")
+        raise ValueError("df argument must be a dataframe or None")
     
-    if isinstance(mapping, dict):
-        mapping = aes(**mapping)
-    elif not isinstance(mapping, (aes, type(None))):
-        raise ValueError("Second argument 'mapping' must be dict, aes() or explicit None")
+    env = kwargs.pop("environment", None)
+    
+    mapping = aes(**dict(mapping)) # handles aes/dict case
+    mapping.update(kwargs)
 
-    p = ggplot(df, mapping)
+    return plotnine.ggplot(df, mapping, env)
+
+def plot(p, *args):
+    """
+    Wrapper of plotnine to avoid (p + geom + ...) syntax. First argument must be a plot, ie
+    a call to ggplot() or a previously existing plot.
+    
+    ```
+    p = plot(
+        ggplot(iris, x="sepal_length", y="sepal_width", colour="species"),
+        geom_point()
+    )
+    ```
+    """
+
     return reduce(operator.add, args, p)
 
 # import evereything into individual namespaces
@@ -42,7 +86,15 @@ def _import(mod, prefix):
 
     return SimpleNamespace(**d)
 
-from plotnine import mapping, guides, labels, qplot, watermark, ggsave, save_as_pdf_pages
+from plotnine import (
+    mapping,
+    guides,
+    labels,
+    qplot,
+    watermark,
+    ggsave,
+    save_as_pdf_pages
+)
 
 import plotnine.geoms
 geom = _import(plotnine.geoms, "geom_")
@@ -68,6 +120,7 @@ theme.five38 = plotnine.themes.theme_538
 delattr(theme, "538")
 
 __all__ = [
+    "ggplot",
     "plot",
     "aes",
     "mapping",
