@@ -289,6 +289,53 @@ In general, the aim of `plyrs` is to get maximum laziness without any input from
 - `join` is a special case, which will coerce the `right` dataframe to the same style as `left`.
     - inside `query()` this will usually be lazy.
 
+# Dark Magic
+
+I don't personally condone this level of witchcraft, but `dplyrs` also contains
+a class whose instances allow you to access columns (like `pl.col`) as object
+attributes, by overriding `__getattr__`.
+
+This idea comes from [sibua](https://github.com/machow/siuba), so credit goes
+to the author 'machow' if he came up with it.
+
+You have to instantiate an object to do this, and additionally the class isn't
+`__all__`.
+
+This is deliberate because:
+a. it means you have to deliberately do this, and
+b. everyone will have a different symbol they want to use (personally I don't like "_", but each to their own)
+
+You use it like this:
+
+```py
+from plyrs import *
+from plyrs import ColAlias as make_alias
+
+col = make_alias()
+
+select(iris, col.species, col.sepal_length, col.sepal_width)
+
+mutate(binomial="Iris " + col.species)
+```
+
+`.all` and `.exclude` are aliased. If you don't want this, pass `redirect=False`
+to the constructor. Calling a ColAlias instance directly will pass any arguments
+to `pl.col`; this can also be used to access a column called "all" ie `col("all")`.
+
+```py
+query(
+    df,
+    select(col.species, col("^sepal_.*$")),
+    group_by(col.species),
+    summarise(col.exclude("species").mean()),
+    select(col(pl.Float64))
+)
+```
+
+Functions like `pl.mean("sepal_width")` are not aliased, because these are just
+sugar and `col.sepal_width.mean()` is easier to type, and reduces the chance of
+collisions massively (e.g. `sum` is a very common columne name).
+
 # Bonus
 
 Similarly ergonomic plotnine bindings:

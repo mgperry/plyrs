@@ -10,8 +10,12 @@ from .extra import(
 )
 
 from .utils import _mask
-
 from .schema import schema
+
+
+from .col_alias import ColAlias
+col = ColAlias()
+
 
 from . import core
 
@@ -42,6 +46,7 @@ _all = [
     "if_else",
     "reorder",
     "index",
+    "col",
 ]
 
 _rename = {**_verbs, **_mask}
