@@ -2,7 +2,7 @@ import polars as pl
 from functools import reduce
 
 from .decorators import wrap_polars, collector
-from .utils import safe_collect, df_arg, _mask
+from .utils import safe_collect, df_arg, _mask, as_col
 
 
 def query(df, *fs, collect=True):
@@ -34,6 +34,32 @@ def rename(df, d={}, **kwargs):
     d.update(kwargs)
 
     return df.rename(d)
+
+
+@wrap_polars
+def filter(df, *args):
+    """
+    dplyrs wrapper for polars.DataFrame.filter
+
+    Takes multiple args, passed to df.filter() as a list.
+    """
+
+    cond = reduce(lambda x, y: x & y, args)
+
+    return df.filter(cond)
+
+
+@wrap_polars
+def drop_nulls(df, *args):
+    """
+    dplyrs wrapper for polars.DataFrame.drop_nulls.
+
+    Takes multiple args as either strings or columns.
+    """
+
+    exprs = [as_col(c).is_not_null() for c in args]
+
+    return filter(df, *exprs)
 
 
 @wrap_polars
@@ -72,7 +98,6 @@ def join(*args, **kwargs):
 _methods = [
     "select",
     "drop",
-    "filter",
     "groupby",
     "with_columns",
     "agg",
@@ -80,7 +105,6 @@ _methods = [
     "sort",
     "lazy",
     "collect",
-    "drop_nulls",
     "get_column",
     "limit",
 ]
@@ -117,7 +141,9 @@ _other_core = [
     "join",
     "pivot",
     "rename",
+    "filter",
     "invoke",
+    "drop_nulls",
 ]
 
 _core = _methods + _other_core

@@ -7,6 +7,9 @@ _mask = {
     "filter": "where",
 }
 
+def as_col(x):
+    return pl.col(x) if isinstance(x, str) else x
+
 
 def safe_collect(x):
     return x.collect() if isinstance(x, pl.LazyFrame) else x
