@@ -297,12 +297,9 @@ In general, the aim of `plyrs` is to get maximum laziness without any input from
 
 ## Dark Magic
 
-`dplyrs` also contains
-a class (`ColAlias`) which allows you to access columns (like `pl.col`) as object
-attributes, by overriding `__getattr__`.
-
-This idea comes from [sibua](https://github.com/machow/siuba), so credit goes
-to the author 'machow' if he came up with it.
+`dplyrs` also contains a class (`Column`) which allows you to access columns (like
+`pl.col`) as object attributes, by overriding `__getattr__`, and idea taken from
+[sibua](https://github.com/machow/siuba).
 
 You use it like this:
 

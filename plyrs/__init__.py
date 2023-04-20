@@ -5,9 +5,7 @@ from .decorators import (
 
 from .utils import _mask
 from .schema import schema
-
-from .col_alias import ColAlias
-col = ColAlias()
+from .column import Column
 
 from . import core
 
@@ -21,7 +19,6 @@ _all = [
     "col",
 ]
 
-
 _verbs = {
     "groupby":      "group_by",
     "with_columns": "mutate",
@@ -30,6 +27,7 @@ _verbs = {
     "get_column":   "pull",
 }
 
+col = Column()
 
 for f in core._core:
     name = _verbs.get(f, f)
@@ -43,4 +41,4 @@ for f in core._core:
         _all.append(name)
 
 
-__all__ = _all + _extra + _extra
+__all__ = _all + _extra

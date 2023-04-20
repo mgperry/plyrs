@@ -1,7 +1,7 @@
 import polars as pl
 
 
-class ColAlias:
+class Column:
     _aliases = [
         "all",
         "exclude",
@@ -14,7 +14,7 @@ class ColAlias:
         if self._redirect and s in self._aliases:
             return getattr(pl, s)
 
-        return pl.col(s)
+        return self(s)
 
-    def __call__(self, s):
-        return pl.col(s)
+    def __call__(self, *s):
+        return pl.col(*s)
