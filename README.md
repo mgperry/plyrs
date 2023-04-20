@@ -264,7 +264,11 @@ List of changes (possibly complete):
 - `rename` takes kwargs in addition to a single dict, kwargs have precedence.
 - `plyrs` keeps `melt` and `pivot` even though this mixes various generations of
     tidyverse evolution, because they're the most obvious names.
-- the renaming is implemented through a dict (`_verbs`) in package init.
+- `drop_nulls` can take column arguments (also multiple arguments).
+    - this may be slower than calling the polars version: original version is
+    used when all args are strings.
+
+NB the renaming is implemented through a dict (`_verbs`) in package init.
 
 some extras:
 - `reorder` to change column order
