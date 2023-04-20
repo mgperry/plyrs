@@ -3,7 +3,7 @@ from functools import reduce
 from typing import Sequence
 
 from .decorators import wrap_polars, collector
-from .utils import safe_collect, df_arg, _mask, as_col
+from .utils import safe_collect, df_arg, _mask, col_name, seq_or_args
 
 
 def query(df, *fs, collect=True):
@@ -17,7 +17,7 @@ def query(df, *fs, collect=True):
 @collector
 def pivot(df, *args, **kwargs):
     """
-    dplyrs wrapper for polars.DataFrame.pivot.
+    plyrs wrapper for polars.DataFrame.pivot.
 
     If 'df' is lazy, will colect and then call .lazy() on result.
     """
@@ -27,7 +27,7 @@ def pivot(df, *args, **kwargs):
 @wrap_polars
 def rename(df, d={}, **kwargs):
     """
-    dplyrs wrapper for polars.DataFrame.rename
+    plyrs wrapper for polars.DataFrame.rename
 
     Takes named arguments as well as a dict.
     """
@@ -40,7 +40,7 @@ def rename(df, d={}, **kwargs):
 @wrap_polars
 def filter(df, *args):
     """
-    dplyrs wrapper for polars.DataFrame.filter
+    plyrs wrapper for polars.DataFrame.filter
 
     Takes multiple args, passed to df.filter() as a list.
     """
@@ -53,37 +53,27 @@ def filter(df, *args):
 @wrap_polars
 def drop_nulls(df, *args):
     """
-    dplyrs wrapper for polars.DataFrame.drop_nulls.
+    plyrs wrapper for polars.DataFrame.drop_nulls.
 
     Takes multiple args as either strings or columns.
     """
 
-    if args and isinstance(args[0], Sequence):
-        if len(args) == 1:
-            args = list(args[0])
-        else:
-            raise ValueError("When passing a a list to drop_nulls no other args are allowed")
+    args = [col_name(arg) for arg in seq_or_args(args)]
 
-    # if all strings passed then call optimised code
-    if all(isinstance(arg, str) for arg in args):
-        return df.drop_nulls(args)
-
-    exprs = [as_col(c).is_not_null() for c in args]
-
-    return filter(df, *exprs)
+    return df.drop_nulls(args)
 
 
 @wrap_polars
 def invoke(df, method, *args, **kwargs):
     """
-    Run polars any method using dplyrs syntax.
+    Run polars any method using plyrs syntax.
     """
     return getattr(df, method)(*args, **kwargs)
 
 
 def _join(df1, df2, *args, **kwargs):
     """
-    helper for lazy dataframes in dplyrs.core.join
+    helper for lazy dataframes in plyrs.core.join
     """
     if isinstance(df1, pl.DataFrame):
         df2 = safe_collect(df2)
@@ -95,7 +85,7 @@ def _join(df1, df2, *args, **kwargs):
 
 def join(*args, **kwargs):
     """
-    dplyrs wrapper for polars.DataFrame.join
+    plyrs wrapper for polars.DataFrame.join
 
     Dispatches on first 2 arguments istead of one.
     Coerces the second data frame to lazy or eager to match the first.
