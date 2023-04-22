@@ -1,6 +1,8 @@
 import polars as pl
+
+from . import column
 from .decorators import wrap_polars
-from .utils import as_col, col_name
+from .utils import seq_or_args
 
 
 def if_else(when, then, otherwise):
@@ -23,18 +25,21 @@ def index(df, name="id", start=1, prefix: str=None):
 
 
 @wrap_polars
-def reorder(df, cols):
+def reorder(df, *cols):
     """
     Reorder dataframe columns.
     """
+    cols = [column.as_str(col) for col in seq_or_args(cols)]
+    
     return df.select(cols, pl.all().exclude(cols))
 
 
 @wrap_polars
 def separate(df, col, into, sep, keep=False):
-    alias = "temp" if keep else col_name(col)
+    col = column.as_str(col)
+    alias = into[0] if keep else col
     n = len(into) - 1
-    exp = as_col(col).str.split_exact(sep, n).alias(alias).struct.rename_fields(into)
+    exp = pl.col(col).str.split_exact(sep, n).alias(alias).struct.rename_fields(into)
     return df.with_columns(exp).unnest(alias)
 
 
