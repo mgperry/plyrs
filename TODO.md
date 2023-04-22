@@ -2,4 +2,8 @@
     - deps
     - version
 - quick tests (e.g. run flights example)
-- documentation???
+- documentation
+- better column introspection (col/result name)
+- test other features
+    - plotting
+    - schema

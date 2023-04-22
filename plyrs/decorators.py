@@ -8,8 +8,8 @@ def wrap_polars(f):
     def wrapper(*args, **kwargs):
         if df_arg(args):
             return f(*args, **kwargs)
-        else:
-            return lambda df: f(df, *args, **kwargs)
+
+        return lambda df: f(df, *args, **kwargs)
     
     return wrapper
 
@@ -24,8 +24,8 @@ def collector(f):
     def new_func(df, *args, **kwargs):
         if isinstance(df, pl.LazyFrame):
             return f(df.collect(), *args, **kwargs).lazy()
-        else:
-            return f(df, *args, **kwargs)
+
+        return f(df, *args, **kwargs)
     
     return new_func
 
