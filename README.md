@@ -152,25 +152,38 @@ functools.reduce(lambda df, f: f(df), q, df).collect()
 The magic happens in the `@wrap_polars` decorator, which takes any function defined on 
 dataframe, and returns a factory function that will work in `query`.
 
+Say we want to create a wrapper around `with_row_number` that calls the column "id"
+and starts from 1, rather than zero, and adds a prefix.
+
 In code:
 
 ```py
 @wrap_polars
-def reorder(df, cols):
-    return df.select(cols, pl.all().exclude(cols))
+def index(df, prefix="row_"):
+    return df.with_row_number("id").with_columns(prefix + (pl.col("id") + 1).cast(str))
 
 # decorated function is now a factory
-def reorder(cols):
-    return lambda df: df.select(cols, pl.all().exclude(cols))
+def index(prefix):
+    return lambda df: \
+        df.with_row_number("id").with_columns(prefix + (pl.col("id") + 1).cast(str))
 ```
 
-which when called (e.g. `reorder(["id", "species"])`) gives roughly:
+which when called (e.g. `index("sample_")`) gives roughly:
 
 ```py
-closure = lambda df: df.select(["id", "species"], pl.all().exclude(["id", "species"]))
+closure = lambda df: \
+    df.with_row_number("id").with_columns("sample_" + (pl.col("id") + 1).cast(str))
 ```
 
-This closure is what is passed to `query()`. 
+This closure is what is passed to `query()` in the following snippet:
+
+```py
+query(
+    iris,
+    index("sample_"),
+    ...
+)
+```
 
 Most code in `plyrs` (barring a few tricky cases) is fairly generic stuff which just
 passes all \[kw\]args to a polars method: in fact, if you check the source most of the
@@ -182,7 +195,7 @@ dataframe, then it just calls the function directly. This means that everything 
 be used outside of the `query` context:
 
 ```py
-reorder(df, ["id", "species"])
+index(iris, "sample_")
 ```
 
 ## Namespaces
@@ -270,11 +283,11 @@ construct, e.g. `col.count.sum()`.
 Similarly ergonomic plotnine bindings:
 
 ```py
-from plotnine import ggplot, geom, stat, facet, theme, labels
+from plyrs.plot import ggplot, geom, stat, facet, theme, labels
 from plotnine.data import mtcars
 
 base_plot = plot(
-    ggplot(mtcars, x='wt', y/'mpg', color='factor(gear)'),
+    ggplot(mtcars, x='wt', y='mpg', color='factor(gear)'),
     geom.point(),
     stat.smooth(method='lm'),
     facet.wrap('~gear')
