@@ -2,8 +2,9 @@ import polars as pl
 from functools import reduce
 from typing import Sequence
 
+from . import column
 from .decorators import wrap_polars, collector
-from .utils import safe_collect, df_arg, _mask, col_name, seq_or_args
+from .utils import safe_collect, df_arg, _mask, seq_or_args
 
 
 def query(df, *fs, collect=True):
@@ -42,7 +43,7 @@ def filter(df, *args):
     """
     plyrs wrapper for polars.DataFrame.filter
 
-    Takes multiple args, passed to df.filter() as a list.
+    Multple arguments are combined with '&'.
     """
 
     cond = reduce(lambda x, y: x & y, args)
@@ -57,10 +58,9 @@ def drop_nulls(df, *args):
 
     Takes multiple args as either strings or columns.
     """
+    cols = [column.as_str(col) for col in seq_or_args(args)]
 
-    args = [col_name(arg) for arg in seq_or_args(args)]
-
-    return df.drop_nulls(args)
+    return df.drop_nulls(cols)
 
 
 @wrap_polars
@@ -75,11 +75,8 @@ def _join(df1, df2, *args, **kwargs):
     """
     helper for lazy dataframes in plyrs.core.join
     """
-    if isinstance(df1, pl.DataFrame):
-        df2 = safe_collect(df2)
-    else:
-        df2 = df2.lazy() # safe
-
+    df2 = safe_collect(df2) if isinstance(df1, pl.DataFrame) else df2.lazy()
+    
     return df1.join(df2, *args, **kwargs)
 
 
@@ -137,8 +134,13 @@ for m in _methods:
         globals()[_mask[m]] = func
 
 
-_other_core = [
+_machinery = [
     "query",
+    "wrap_polars",
+    "collector",
+]
+
+_other_core = [
     "join",
     "pivot",
     "rename",
@@ -147,6 +149,6 @@ _other_core = [
     "drop_nulls",
 ]
 
-_core = _methods + _other_core
+_core = _machinery + _methods + _other_core
 
 __all__ = [_mask.get(f, f) for f in _core]

@@ -1,5 +1,7 @@
 import polars as pl
+import re
 
+COLNAME = r'^col\("([^"]*)"\)$'
 
 class Column:
     _aliases = [
@@ -18,3 +20,16 @@ class Column:
 
     def __call__(self, *s):
         return pl.col(*s)
+    
+
+def as_str(col):
+    if isinstance(col, str):
+        return col
+
+    m = re.match(COLNAME, str(col))
+    if m:
+        return m.group(1)
+
+
+def as_col(col):
+    return pl.col(col) if isinstance(col, str) else col

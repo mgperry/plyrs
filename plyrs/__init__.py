@@ -1,8 +1,3 @@
-from .decorators import (
-    wrap_polars,
-    collector,
-)
-
 from .utils import _mask
 from .schema import schema
 from .column import Column
@@ -13,8 +8,6 @@ from .extra import *
 from .extra import _extra
 
 _all = [
-    "wrap_polars",
-    "collector",
     "schema",
     "col",
 ]
