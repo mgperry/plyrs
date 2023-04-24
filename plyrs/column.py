@@ -23,6 +23,9 @@ class Column:
     
 
 def as_str(col):
+    if col is None:
+        return None
+
     if isinstance(col, str):
         return col
 
@@ -32,4 +35,7 @@ def as_str(col):
 
 
 def as_col(col):
+    if col is None:
+        return None
+
     return pl.col(col) if isinstance(col, str) else col

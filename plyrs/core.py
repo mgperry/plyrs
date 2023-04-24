@@ -4,7 +4,7 @@ from typing import Sequence
 
 from . import column
 from .decorators import wrap_polars, collector
-from .utils import safe_collect, df_arg, _mask, seq_or_args
+from .utils import safe_collect, df_arg, _mask, chain, multi_col
 
 
 def query(df, *fs, collect=True):
@@ -26,16 +26,31 @@ def pivot(df, *args, **kwargs):
 
 
 @wrap_polars
+def melt(df, id_vars=None, value_vars=None, variable_name=None, value_name=None):
+    
+    if id_vars is not None:
+        id_vars = multi_col(id_vars)
+
+    if value_vars is not None:
+        value_vars = multi_col(value_vars)
+
+    return df.melt(
+        id_vars,
+        value_vars,
+        variable_name,
+        value_name
+    )
+
+
+@wrap_polars
 def rename(df, d={}, **kwargs):
     """
     plyrs wrapper for polars.DataFrame.rename
 
-    Takes named arguments as well as a dict.
+    Takes named arguments as well as a dict. dict keys and values must be strings.
     """
 
-    d.update(kwargs)
-
-    return df.rename(d)
+    return df.rename(d | kwargs)
 
 
 @wrap_polars
@@ -52,15 +67,39 @@ def filter(df, *args):
 
 
 @wrap_polars
-def drop_nulls(df, *args):
+def drop(df, col, *more_cols):
+    """
+    plyrs wrapper for polars.DataFrame.drop.
+
+    Takes multiple args as either strings or columns.
+    """
+    cols = [column.as_str(col) for col in chain(col, more_cols)]
+
+    return df.drop(cols)
+
+
+@wrap_polars
+def drop_nulls(df, col, *more_cols):
     """
     plyrs wrapper for polars.DataFrame.drop_nulls.
 
     Takes multiple args as either strings or columns.
     """
-    cols = [column.as_str(col) for col in seq_or_args(args)]
+    cols = [column.as_str(col) for col in chain(col, more_cols)]
 
     return df.drop_nulls(cols)
+
+
+@wrap_polars
+def get_column(df, col):
+    """
+    plyrs wrapper for polars.DataFrame.get_rolumn.
+
+    Takesa single string or column.
+    """
+    col = column.as_str(col)
+
+    return df.get_column(col)
 
 
 @wrap_polars
@@ -95,15 +134,12 @@ def join(*args, **kwargs):
 
 _methods = [
     "select",
-    "drop",
     "groupby",
     "with_columns",
     "agg",
-    "melt",
     "sort",
     "lazy",
     "collect",
-    "get_column",
     "limit",
 ]
 
@@ -114,10 +150,10 @@ def _gen_method(method):
 
     def func(df, *args, **kwargs):
         return getattr(df, method)(*args, **kwargs)
-    
-    func.__name__ = m
-    func.__qualname__ = m
-    func.__doc__ = f"Wrapper for polars.DataFrame.{m}"
+
+    func.__name__ = method
+    func.__qualname__ = method
+    func.__doc__ = f"Wrapper for polars.DataFrame.{method}"
     
     return func
 
@@ -143,10 +179,13 @@ _machinery = [
 _other_core = [
     "join",
     "pivot",
+    "melt",
     "rename",
     "filter",
     "invoke",
+    "drop",
     "drop_nulls",
+    "get_column",
 ]
 
 _core = _machinery + _methods + _other_core

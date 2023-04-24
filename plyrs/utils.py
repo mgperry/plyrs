@@ -1,23 +1,31 @@
 import polars as pl
 from polars.dataframe.groupby import GroupBy
 from polars.lazyframe.groupby import LazyGroupBy
-from collections.abc import Iterable
+
+from typing import Sequence, Union
+
+from . import column
 
 _mask = {
     "filter": "where",
 }
 
 
-def seq_or_args(args) -> list:
-    if not args: return []
+def chain(cols, more_cols):
+    if isinstance(cols, (str, pl.Expr)):
+        cols = [cols]
+    
+    return cols + list(more_cols)
 
-    if isinstance(args[0], Iterable):
-        if len(args) > 1:
-            raise ValueError("If first arg is a sequnece, no other args are allowed.")
 
-        return list(args[0])
+def multi_col(cols: Union[str, Sequence]) -> list[str]:
+    """
+    Coerce arguments taking a string or list of strings, and allow column arguments also.
+    """
+    if isinstance(cols, (str, pl.Expr)):
+        cols = [cols]
 
-    return args
+    return [column.as_str(col) for col in cols]
 
 
 def safe_collect(x):

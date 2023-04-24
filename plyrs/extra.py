@@ -2,7 +2,7 @@ import polars as pl
 
 from . import column
 from .decorators import wrap_polars
-from .utils import seq_or_args
+from .utils import chain
 
 
 def if_else(when, then, otherwise):
@@ -19,18 +19,20 @@ def index(df, name="id", start=1, prefix: str=None):
     from 1, default to "id" and optionally adds a prefix.
     """
     df = df.with_row_count(name).with_columns(pl.col(name) + start)
+
     if prefix:
         df = df.with_columns((prefix + pl.col("id").cast(str)).keep_name())
+
     return df
 
 
 @wrap_polars
-def reorder(df, *cols):
+def reorder(df, col, *more_cols):
     """
     Reorder dataframe columns.
     """
-    cols = [column.as_str(col) for col in seq_or_args(cols)]
-    
+    cols = [column.as_str(col) for col in chain(col, more_cols)]
+
     return df.select(cols, pl.all().exclude(cols))
 
 
