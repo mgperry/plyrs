@@ -20,6 +20,7 @@ What you get (aside from the great name):
 - @schema decorator to validate inputs to domain-specific functions.
 
 What you don't get:
+
 There is no attempt to acheive feature parity with `dplyr` or reimplement
 R syntax, that would be silly. The benefit of this is that you get the full power
 of polars functions, which is pretty cool. It's also very easy to define similar
@@ -27,12 +28,13 @@ functions yourself (see How it Works) when you find pain points in polars, or yo
 have a common operation you want to reuse. 
 
 A note:
+
 I certainly *don't* think that polars should have been made like this, `plyrs` is very
-much a 'porcelain' library probably shouldn't be used outside of interactive sessions
-and short scripts (outside of @schema perhaps). I personally spend a lot of time
-starting at analysis code, so maybe aesthetics mean more to me than most. The same goes
-for including lots of small convenience functions: it's a mistake in a serious library,
-but it can significantly improve the interactive experience.
+much a 'porcelain' library, and as such probably shouldn't be used outside of
+interactive sessions and short scripts (outside of @schema perhaps). I personally spend
+a lot of time starting at analysis code, so maybe aesthetics mean more to me than most.
+The same goes for including lots of small convenience functions: it's a mistake in a
+serious library, but it can significantly improve the interactive experience.
 
 ## syntax
 
@@ -146,7 +148,18 @@ df.collect()
 For the big-brained:
 
 ```py
-functools.reduce(lambda df, f: f(df), q, df).collect()
+functools.reduce(lambda df, f: f(df), q, df.lazy()).collect()
+```
+
+You could also think of it like threading macro (in clojure), powered by closures
+rather than a macro, if that helps:
+
+```clj
+(-> df
+  (filter {:year 2013 :month 1})
+  (drop_nulls :arr_delay)
+  (join airlines :carrier :left)
+  ...)
 ```
 
 The magic happens in the `@wrap_polars` decorator, which takes any function defined on 
@@ -224,7 +237,8 @@ List of name changes (possibly complete):
 - `rename` takes kwargs in addition to a single dict, kwargs have precedence.
 - `plyrs` keeps `melt` and `pivot` even though this mixes various generations of
     tidyverse evolution, because they're the most obvious names.
-- `drop_nulls` can take column arguments (also multiple arguments).
+- Some functions have been modified to take `pl.col` arguments, so the user doesn't
+have to manually track which functions take cols and which take strings.
 
 NB the renaming is implemented through a dict (`_verbs`) in package init.
 
@@ -303,6 +317,7 @@ plot(
 ```
 
 - `plot` function combines arguments, no more R-style "+" wrapper in brackets
-- Coerce polars dataframe and dictionary `aes()` arguments
+- Coerce polars dataframe
+- no need to manually cal `aes()`, `ggplot` coerces dicts + kwargs
 - geoms, coords, scales etc. are namespaced with extra typing removed.
 - easily compose lists of geoms
